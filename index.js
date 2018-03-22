@@ -43,12 +43,17 @@ function BomRadar(options) {
 			wthrDistricts: false,
 		},
 		clean: {
-			olderThan: 60*60*24 * 1000 // == 24 hours
+			olderThan: 60*60*24 * 1000, //= 24 hours
 		},
 		composite: {
 			format: 'gif',
 			method: 'path',
+			cache: true,
 			delay: 50,
+			cacheFile: b => `IDR${b.settings.id}.composite.${b.settings.composite.format}`,
+			cacheFileExpiry: 60*60*1 * 1000, //= 1 hour
+			autoRefresh: true,
+			autoClean: true,
 			arguments: [ // Any argument functions are evaluated as ({frames,backgrounds,settings})
 				// Set the animation delay + loop parameters
 				'-delay', b => b.settings.composite.delay,
@@ -74,7 +79,7 @@ function BomRadar(options) {
 				b => b.frames,
 
 				// Append the output file
-				b => fspath.join(b.settings.cachePath, `IDR${b.settings.id}.composite.${b.settings.composite.format}`),
+				b => fspath.join(b.settings.cachePath, _.isFunction(b.settings.composite.cacheFile) ? b.settings.composite.cacheFile(b) : b.settings.composite.cacheFile),
 			],
 		},
 	});
@@ -432,6 +437,36 @@ function BomRadar(options) {
 		var settings = _.defaults(options, bom.settings);
 
 		async()
+			.set('cacheFile', fspath.join(settings.cachePath, _.isFunction(settings.composite.cacheFile) ? settings.composite.cacheFile({settings}) : settings.composite.cacheFile))
+			// Check the cached version hasn't expired (If settings.composite.cache) {{{
+			.then(function(next) {
+				// Calculate the cache file value
+				var cacheFileExpiry = new Date(Date.now() - settings.composite.cacheFileExpiry);
+
+				fs.stat(this.cacheFile, (err, stat) => {
+					if (err) {
+						debug(`Radar ${settings.id} composite "${this.cacheFile}" does not exist - creating`);
+						next(); // No cached radar - continue on to generate it
+					} else if (stat.mtime < cacheFileExpiry) {
+						debug(`Radar ${settings.id} composite "${this.cacheFile}" expired! - Recreating`);
+						next(); // File exists but it has expired
+					} else {
+						debug(`Radar ${settings.id} composite "${this.cacheFile}" is still within cache range - Using cached version`);
+						next('SKIP');
+					}
+				});
+			})
+			// }}}
+			// Refresh data (if settings.composite.autoRefresh) {{{
+			.then(function(next) {
+				bom.refresh(settings, next);
+			})
+			// }}}
+			// Clean data (if settings.composite.autoClean) {{{
+			.then(function(next) {
+				bom.clean(settings, next);
+			})
+			// }}}
 			// Fetch cached file list {{{
 			.then('files', function(next) {
 				bom.cached(next);
@@ -466,25 +501,19 @@ function BomRadar(options) {
 				im.convert(this.arguments, next);
 			})
 			// }}}
-			// Convert output into required type {{{
-			.then('result', function(next) {
-				var path = _.last(this.arguments);
-				switch (settings.composite.method) {
-					case 'path':
-						return cb(null, path);
-					case 'buffer':
-						return fs.readFile(path, next);
-					case 'stream':
-						return next(null, fs.createReadStream(path));
-					default:
-						cb(`Unknown composite return method: "${settings.composite.method}"`);
-				}
-			})
-			// }}}
 			// End {{{
 			.end(function(err) {
-				if (err) return cb(err);
-				cb(err, this.result);
+				if (err && err != 'SKIP') {
+					cb(err);
+				} else if (settings.composite.method == 'path') {
+					cb(null, this.cacheFile);
+				} else if (settings.composite.method == 'buffer') {
+					fs.readFile(this.cacheFile, cb);
+				} else if (settings.composite.method == 'stream') {
+					cb(null, fs.createReadStream(this.cacheFile));
+				} else {
+					cb(`Unknown composite return method: "${settings.composite.method}"`);
+				}
 			})
 			// }}}
 
