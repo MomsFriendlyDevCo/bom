@@ -16,10 +16,12 @@ describe('bom.refresh()', function() {
 			expect(res).to.have.property('backgrounds');
 			expect(res.backgrounds).to.be.an.instanceOf(Object);
 			expect(res.backgrounds).to.satisfy(i => _.values(i).every(l => _.isString(l)));
+			expect(res.backgrounds).to.satisfy(i => _.values(i).every(l => l.startsWith(bom.settings.cachePath)));
 
 			expect(res).to.have.property('frames');
 			expect(res.frames).to.have.length.above(5);
 			expect(res.frames).to.satisfy(i => i.every(l => _.isString(l)));
+			expect(res.frames).to.satisfy(i => i.every(l => l.startsWith(bom.settings.cachePath)));
 
 			done();
 		});

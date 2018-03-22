@@ -59,7 +59,7 @@ function BomRadar(options) {
 					)
 					.map((v, k) => [
 						'-draw',
-						`image DstOver 0,0,0,0 '${fspath.join(b.settings.cachePath, b.backgrounds[k])}'`,
+						`image DstOver 0,0,0,0 '${b.backgrounds[k]}'`,
 					])
 					.sortBy(v => /\.background\.png/.test(v) ? `AAA${v}` : v) // Sort main background layer first
 					.value(),
@@ -68,11 +68,14 @@ function BomRadar(options) {
 				'-dispose', 'background',
 
 				// List the animation frames
-				b => b.frames.map(f => fspath.join(b.settings.cachePath, f)),
+				b => b.frames,
 
 				// Append the output file
 				b => fspath.join(b.settings.cachePath, `IDR${b.settings.id}.composite.${b.settings.composite.format}`),
 			],
+		},
+		clean: {
+			olderThan: 60*60*24 * 1000 // == 24 hours
 		},
 	});
 
@@ -144,10 +147,7 @@ function BomRadar(options) {
 								.filter(i => i.name.startsWith(`IDR${settings.id}`))
 								.filter(i => i.name.endsWith('.png'))
 								.filter(i => {
-									var bits = /^IDR.*\.([a-z]+)\.png$/.exec(i.name);
-									if (!bits) return false; // Doesn't match expected format
-									var type = bits[1];
-
+									var [,type] = /^IDR.*\.([a-z]+)\.png$/.exec(i.name) || [];
 									if (!type) return false;
 									if (!settings.backgrounds[type]) return false; // Dont fetch this type
 									return true;
@@ -340,7 +340,8 @@ function BomRadar(options) {
 				next(null, {
 					frames: this.files
 						.filter(f => f.startsWith(`IDR${settings.id}.T.`))
-						.filter(f => f.endsWith('.png')),
+						.filter(f => f.endsWith('.png'))
+						.map(f => fspath.join(settings.cachePath, f)),
 					backgrounds: _(settings.backgrounds)
 						.mapValues((f, k) => _(this.files)
 							.filter(f => f.endsWith('.png'))
@@ -348,6 +349,7 @@ function BomRadar(options) {
 							.first()
 						)
 						.pickBy((v, k) => !!v)
+						.mapValues(v => fspath.join(settings.cachePath, v))
 						.value(),
 				});
 			})
@@ -357,6 +359,54 @@ function BomRadar(options) {
 				if (err) return cb(err);
 				cb(null, this.files);
 			});
+			// }}}
+
+		return bom;
+	};
+
+
+	/**
+	* Cleans out older radar images
+	* @param {Object} [options] Additional options to use (overrides bom.settings)
+	* @param {function} cb Callback to call as (error, {backgrounds, frames})
+	* @returns {BomRadar} This chainable object
+	*/
+	bom.clean = function(options, cb) {
+		// Argument mangling {{{
+		if (_.isFunction(options)) { // Called as (cb)
+			cb = options;
+			options = {};
+		}
+		// }}}
+
+		var settings = _.defaults(options, bom.settings);
+
+		async()
+			// Fetch local data {{{
+			.then('files', function(next) {
+				bom.cached(settings, next);
+			})
+			// }}}
+			// Filter down to files we need to remove {{{
+			.then('files', function(next) {
+				var expiry = new Date(Date.now() - settings.clean.olderThan);
+				next(null, this.files.frames
+					.filter(f => bom.utils.nameToDate(f) < expiry)
+				);
+			})
+			// }}}
+			// Remove marked files {{{
+			.forEach('files', function(next, file) {
+				debug('rm', file);
+				fs.unlink(file, next);
+				next();
+			})
+			// }}}
+			// End {{{
+			.end(function(err) {
+				if (err) return cb(err);
+				cb(null, this.files);
+			})
 			// }}}
 
 		return bom;
@@ -438,6 +488,31 @@ function BomRadar(options) {
 			// }}}
 
 		return bom;
+	};
+
+
+	/**
+	* General utilities storage for this module
+	* @var Object
+	*/
+	bom.utils = {};
+
+
+	/**
+	* Utility function to convert a BOM filename to a JavaScript Date object
+	* @param {string} path The file path to translate (basename will be computed automatically)
+	* @returns {Date|null} Either a JavaScript date if one could be extracted or null
+	*/
+	bom.utils.nameToDate = function(path) {
+		var name = fspath.basename(path);
+		//                                         ID...  YEAR      MONTH     DAY       Hour (24) Minute
+		//                                         IDR... 2018      03        21        05        00        .png
+		var [, year, month, day, hour, minute] = /^IDR.+\.([0-9]{4})([0-9]{2})([0-9]{2})([0-9]{2})([0-9]{2})\./.exec(name) || [];
+		return (
+			year
+			? new Date(year, month - 1, day, hour, minute)
+			: null
+		);
 	};
 
 	return bom;
