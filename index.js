@@ -42,6 +42,9 @@ function BomRadar(options) {
 			waterWays: false,
 			wthrDistricts: false,
 		},
+		clean: {
+			olderThan: 60*60*24 * 1000 // == 24 hours
+		},
 		composite: {
 			format: 'gif',
 			method: 'path',
@@ -73,9 +76,6 @@ function BomRadar(options) {
 				// Append the output file
 				b => fspath.join(b.settings.cachePath, `IDR${b.settings.id}.composite.${b.settings.composite.format}`),
 			],
-		},
-		clean: {
-			olderThan: 60*60*24 * 1000 // == 24 hours
 		},
 	});
 
@@ -415,7 +415,7 @@ function BomRadar(options) {
 
 	/**
 	* Create a composite image based on the cached data from bom.refresh()
-	* This function creates a single GIF / Mp4 file which has a background + animated radar layers
+	* This function creates a single GIF / MP4 file which has a background + animated radar layers
 	* @param {Object} [options] Additional options to use (overrides bom.settings)
 	* @param {function} cb Callback to call as (error, buffer|path|stream)
 	* @returns {BomRadar} This chainable object
