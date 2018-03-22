@@ -78,6 +78,18 @@ function BomRadar(options) {
 
 
 	/**
+	* Convenience function to quickly set settings
+	* @param {string|array} key The settings path to set, dotted or array notation is supported
+	* @param {*} value The value to set the setting to
+	* @returns {BomRadar} This chainable object
+	*/
+	bom.set = function(key, value) {
+		_.set(bom.settings, key, value);
+		return bom;
+	};
+
+
+	/**
 	* Attempt to refresh BOM radar data from the FTP site
 	* @param {Object} [options] Additional options to use (overrides bom.settings)
 	* @param {function} cb Callback to call as (error, {backgrounds, frames})
@@ -405,9 +417,14 @@ function BomRadar(options) {
 			// }}}
 			// Convert output into required type {{{
 			.then('result', function(next) {
+				var path = _.last(this.arguments);
 				switch (settings.composite.method) {
 					case 'path':
-						return cb(null, _.last(this.arguments));
+						return cb(null, path);
+					case 'buffer':
+						return fs.readFile(path, next);
+					case 'stream':
+						return next(null, fs.createReadStream(path));
 					default:
 						cb(`Unknown composite return method: "${settings.composite.method}"`);
 				}
@@ -416,7 +433,7 @@ function BomRadar(options) {
 			// End {{{
 			.end(function(err) {
 				if (err) return cb(err);
-				cb(this.result);
+				cb(err, this.result);
 			})
 			// }}}
 
