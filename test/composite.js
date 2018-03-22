@@ -5,7 +5,7 @@ var fs = require('fs');
 
 describe('bom.composite()', function() {
 	var bom;
-	before('should setup a BOM instance', ()=> bom = new Bom({id: '032'})); // 032 = Sydney
+	before('should setup a BOM instance', ()=> bom = new Bom(require('./config')));
 
 	it('should fetch radars to a file path', function(done) {
 		this.timeout(30 * 1000);

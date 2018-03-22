@@ -4,7 +4,7 @@ var expect = require('chai').expect;
 
 describe('bom.clean()', function() {
 	var bom;
-	before('should setup a BOM instance', ()=> bom = new Bom({id: '032'})); // 032 = Sydney
+	before('should setup a BOM instance', ()=> bom = new Bom(require('./config')));
 
 	it('should clean old data', function(done) {
 		this.timeout(30 * 1000);
