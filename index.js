@@ -344,6 +344,7 @@ function BomRadar(options) {
 						.map(f => fspath.join(settings.cachePath, f)),
 					backgrounds: _(settings.backgrounds)
 						.mapValues((f, k) => _(this.files)
+							.filter(f => f.startsWith(`IDR${settings.id}.`))
 							.filter(f => f.endsWith('.png'))
 							.filter(f => (new RegExp(`^IDR.*${k}\.png$`)).test(f))
 							.first()
