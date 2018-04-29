@@ -52,6 +52,7 @@ function BomRadar(options) {
 			delay: 50,
 			cacheFile: b => `IDR${b.settings.id}.composite.${b.settings.composite.format}`,
 			cacheFileExpiry: 60*60*1 * 1000, //= 1 hour
+			removeAttribution: false,
 			autoRefresh: true,
 			autoClean: true,
 			arguments: [ // Any argument functions are evaluated as ({frames,backgrounds,settings})
@@ -77,6 +78,9 @@ function BomRadar(options) {
 
 				// List the animation frames
 				b => b.frames,
+
+				// Optionally remove the attribution - assuming the user has credited the BOM elsewhere
+				b =>  b.settings.composite.removeAttribution ? ['-chop', 'x15'] : undefined,
 
 				// Append the output file
 				b => fspath.join(b.settings.cachePath, _.isFunction(b.settings.composite.cacheFile) ? b.settings.composite.cacheFile(b) : b.settings.composite.cacheFile),
@@ -440,6 +444,8 @@ function BomRadar(options) {
 			.set('cacheFile', fspath.join(settings.cachePath, _.isFunction(settings.composite.cacheFile) ? settings.composite.cacheFile({settings}) : settings.composite.cacheFile))
 			// Check the cached version hasn't expired (If settings.composite.cache) {{{
 			.then(function(next) {
+				if (!settings.composite.cache) return next(); // Forcing no cache
+
 				// Calculate the cache file value
 				var cacheFileExpiry = new Date(Date.now() - settings.composite.cacheFileExpiry);
 
@@ -483,6 +489,7 @@ function BomRadar(options) {
 							})
 							: a
 						)
+						.filter()
 						.flattenDeep()
 						.value()
 				);

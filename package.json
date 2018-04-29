@@ -1,6 +1,6 @@
 {
   "name": "@momsfriendlydevco/bom",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Scraper for the Australian Bureau of Meteorology (BOM) - including radar images",
   "main": "index.js",
   "scripts": {

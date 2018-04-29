@@ -49,30 +49,31 @@ Object used to store all settings for this instance. These can be set during the
 
 Supported settings:
 
-| Setting                     | Type    | Default                                            | Description                                                                                   |
-|-----------------------------|---------|----------------------------------------------------|-----------------------------------------------------------------------------------------------|
-| `id`                        | Number  | `032`                                              | The ID of the weather radar to use (see the README file for how to retrieve this              |
-| `host`                      | String  | `"ftp.bom.gov.au"`                                 | The FTP host to communicate with to retrieve data                                             |
-| `framePath`                 | String  | `"/anon/gen/radar"`                                | The path on the FTP host where the radar frames are located                                   |
-| `backgroundsPath`           | String  | `"/anon/gen/radar_transparencies"`                 | The path on the FTP host where the background layers are located                              |
-| `cachePath`                 | String  | `"${os.tmpdir()}/bom-cache"`                       | Where to locally store cached resources                                                       |
-| `getThreads`                | Number  | `1`                                                | How many FTP GET operations to support at once                                                |
-| `fetch`                     | Object  | See below                                          | Options for fetching data during a call to `refresh()`                                        |
-| `fetch.frames`              | Boolean | `true`                                             | Whether to attempt to refresh frame data                                                      |
-| `fetch.backgrounds`         | Boolean | `true`                                             | Whether to attempt to refresh background layer data                                           |
-| `backgrounds`               | Object  | `{background:true,locations:true,topography:true}` | An object specifying which background layers to fetch / render                                |
-| `clean`                     | Object  | See below                                          | Options for cleaning resources                                                                |
-| `clean.olderThan`           | Number  | `60*60*24*1000` (24 hours)                         | The time (in milliseconds) from now which is used to expire resources                         |
-| `composite`                 | Object  | See below                                          | Options for compositing an animated Radar file via `composite()`                              |
-| `composite.autoRefresh`     | Boolean | `true`                                             | Automatically try to refresh data, disable this if you are calling this manulally             |
-| `composite.autoClean`       | Boolean | `true`                                             | Automatically try to clean out expired radar images, disable if you are calling this manually |
-| `composite.cache`           | Boolean | `true`                                             | Attempt to provide the composite radar animation from a local resource instead of generating  |
-| `composite.cacheFile`       | Function or String  | `IDR{CODE}.composite.{EXT}`            | How to calculate the cache file name                                                          |
-| `composite.cacheFileExpiry` | Number  | `60*60*100` (1 hour)                               | How long the cached version of the composite should be allowed before expiry                  |
-| `composite.format`          | String  | `gif`                                              | An [ImageMagick](https://www.imagemagick.org) compatible multi-image file format to render    |
-| `composite.method`          | String  | `"path"`                                           | What to actually return from `composite()`. Can be `"path", "buffer", "stream"`               |
-| `composite.delay`           | Number  | `50`                                               | Default delay (in milliseconds) between frames when compositing                               |
-| `composite.arguments`       | Array   | Complex, see source code                           | The operations to perform via ImageMagick to output the composite file                        |
+| Setting                       | Type    | Default                                            | Description                                                                                   |
+|-------------------------------|---------|----------------------------------------------------|-----------------------------------------------------------------------------------------------|
+| `id`                          | Number  | `032`                                              | The ID of the weather radar to use (see the README file for how to retrieve this              |
+| `host`                        | String  | `"ftp.bom.gov.au"`                                 | The FTP host to communicate with to retrieve data                                             |
+| `framePath`                   | String  | `"/anon/gen/radar"`                                | The path on the FTP host where the radar frames are located                                   |
+| `backgroundsPath`             | String  | `"/anon/gen/radar_transparencies"`                 | The path on the FTP host where the background layers are located                              |
+| `cachePath`                   | String  | `"${os.tmpdir()}/bom-cache"`                       | Where to locally store cached resources                                                       |
+| `getThreads`                  | Number  | `1`                                                | How many FTP GET operations to support at once                                                |
+| `fetch`                       | Object  | See below                                          | Options for fetching data during a call to `refresh()`                                        |
+| `fetch.frames`                | Boolean | `true`                                             | Whether to attempt to refresh frame data                                                      |
+| `fetch.backgrounds`           | Boolean | `true`                                             | Whether to attempt to refresh background layer data                                           |
+| `backgrounds`                 | Object  | `{background:true,locations:true,topography:true}` | An object specifying which background layers to fetch / render                                |
+| `clean`                       | Object  | See below                                          | Options for cleaning resources                                                                |
+| `clean.olderThan`             | Number  | `60*60*24*1000` (24 hours)                         | The time (in milliseconds) from now which is used to expire resources                         |
+| `composite`                   | Object  | See below                                          | Options for compositing an animated Radar file via `composite()`                              |
+| `composite.autoClean`         | Boolean | `true`                                             | Automatically try to clean out expired radar images, disable if you are calling this manually |
+| `composite.autoRefresh`       | Boolean | `true`                                             | Automatically try to refresh data, disable this if you are calling this manulally             |
+| `composite.cache`             | Boolean | `true`                                             | Attempt to provide the composite radar animation from a local resource instead of generating  |
+| `composite.cacheFileExpiry`   | Number  | `60*60*100` (1 hour)                               | How long the cached version of the composite should be allowed before expiry                  |
+| `composite.cacheFile`         | Function or String  | `IDR{CODE}.composite.{EXT}`            | How to calculate the cache file name                                                          |
+| `composite.delay`             | Number  | `50`                                               | Default delay (in milliseconds) between frames when compositing                               |
+| `composite.format`            | String  | `gif`                                              | An [ImageMagick](https://www.imagemagick.org) compatible multi-image file format to render    |
+| `composite.method`            | String  | `"path"`                                           | What to actually return from `composite()`. Can be `"path", "buffer", "stream"`               |
+| `composite.removeAttribution` | Boolean | `false`                                            | Whether to remove the 15px header bar added by the feed. Only set this to true if you are attributing the BOM elsewhere |
+| `composite.arguments`         | Array   | Complex, see source code                           | The operations to perform via ImageMagick to output the composite file                        |
 
 
 

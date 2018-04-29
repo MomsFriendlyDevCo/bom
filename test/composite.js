@@ -51,4 +51,24 @@ describe('bom.composite()', function() {
 				done();
 			});
 	});
+
+
+	// Change 'skip' to 'only' in the next test to dump the file to disk for inspection
+	it.skip('should render to a file for inspection', function(done) {
+		this.timeout(30 * 1000);
+
+		bom
+			.set('composite.cache', false) // Force refreshing (useful if you're playing around with any of the composite settings)
+			.set('composite.method', 'stream')
+			.set('composite.removeAttribution', true) // Test attribution removal
+			.composite(function(err, res) {
+				if (err) return done(err);
+
+				res.pipe(fs.createWriteStream('./output.gif'))
+					.on('close', ()=> {
+						console.log('Output image as "./output.gif"');
+						done();
+					});
+			});
+	})
 });
